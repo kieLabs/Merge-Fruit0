@@ -26,10 +26,10 @@ body{display:flex;justify-content:center;align-items:center}
 .boost-btn span{position:absolute;right:-5px;bottom:-5px;background:#36a9ed;border:2px solid #fff;border-radius:6px;font-size:10px;font-weight:900;color:#fff;padding:0 4px;min-width:17px;text-align:center}
 #playfield{position:absolute;left:12px;right:12px;top:126px;bottom:137px;background:rgba(255,255,255,.28);border:4px solid rgba(255,255,255,.8);border-bottom:6px solid #e2caa2;border-radius:8px 8px 16px 16px;box-shadow:inset 0 0 16px rgba(255,255,255,.4);overflow:hidden;touch-action:none}
 #canvas{width:100%;height:100%;display:block}
-#shelf{position:absolute;bottom:max(54px,calc(env(safe-area-inset-bottom) + 48px));left:50%;transform:translateX(-50%);height:48px;max-width:calc(100% - 18px);background:#eed7aa;border:3px solid #fffae8;border-radius:25px;padding:2px 7px;display:flex;align-items:center;gap:3px;box-shadow:0 5px 0 #956b46}
-.shelf-fruit{position:relative;display:flex;flex-direction:column;align-items:center;flex:0 0 auto}
-.shelf-fruit canvas{width:25px;height:25px}
-.shelf-fruit span{position:absolute;bottom:-16px;font-size:9px;font-weight:1000;color:#ffdf38;text-shadow:0 1px 2px #754416}
+#shelf{position:absolute;bottom:max(54px,calc(env(safe-area-inset-bottom) + 48px));left:50%;transform:translateX(-50%);width:calc(100% - 14px);max-width:430px;min-height:68px;background:#eed7aa;border:3px solid #fffae8;border-radius:22px;padding:3px 4px 4px;display:flex;align-items:center;justify-content:space-between;gap:0;box-shadow:0 5px 0 #956b46;overflow:visible}
+.shelf-fruit{position:relative;display:flex;flex:1 1 0;min-width:0;height:58px;flex-direction:column;align-items:center;justify-content:flex-end;gap:0}
+.shelf-fruit canvas{display:block;width:100%;max-width:31px;height:39px;flex:0 0 39px;overflow:visible}
+.shelf-fruit span{position:static;display:block;margin-top:0;font-size:10px;line-height:11px;font-weight:1000;color:#70401d;text-shadow:none;text-align:center}
 #brand{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:10px;letter-spacing:2px;font-weight:1000;color:#fff5d9;text-shadow:0 2px 2px #79502f;pointer-events:none}
 #toast{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);background:#fff9dc;border:3px solid #f69d3a;padding:8px 18px;border-radius:20px;font-weight:900;color:#8f451b;box-shadow:0 4px 0 #aa5925;display:none;z-index:50;white-space:nowrap}
 #overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
@@ -42,7 +42,7 @@ body{display:flex;justify-content:center;align-items:center}
 .setting-row input{width:22px;height:22px;accent-color:#48b82c}
 #game:fullscreen{width:min(100vw,520px);height:100dvh;max-height:100dvh}
 #game:fullscreen #playfield{top:126px;bottom:137px}
-@media(max-width:360px){#topbar{left:10px;right:10px}.icon-btn{width:40px;height:42px;font-size:21px}#scoreCloud{width:104px}#nextPill{padding:3px 5px;font-size:10px}.boost-side{gap:6px}.boost-btn{width:39px;height:39px;font-size:17px}#boosters{left:11px;right:11px}#shelf{gap:1px;padding:2px 4px}.shelf-fruit canvas{width:23px;height:23px}}
+@media(max-width:360px){#topbar{left:10px;right:10px}.icon-btn{width:40px;height:42px;font-size:21px}#scoreCloud{width:104px}#nextPill{padding:3px 5px;font-size:10px}.boost-side{gap:6px}.boost-btn{width:39px;height:39px;font-size:17px}#boosters{left:11px;right:11px}#shelf{width:calc(100% - 10px);min-height:64px;padding:2px 2px 3px}.shelf-fruit{height:55px}.shelf-fruit canvas{max-width:27px;height:36px;flex-basis:36px}.shelf-fruit span{font-size:9px;line-height:10px}}
 @media(max-height:600px){#topbar{top:5px;height:48px}.icon-btn{height:38px;width:40px}#scoreCloud{top:0;padding:1px 0 3px}#scoreCloud .cur{font-size:21px;line-height:22px}#boosters{top:48px}.boost-btn{width:35px;height:35px;font-size:16px}#playfield{top:91px;bottom:93px}#shelf{bottom:35px;height:42px}#brand{bottom:5px;font-size:8px}#game:fullscreen #playfield{top:91px;bottom:93px}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
@@ -313,12 +313,25 @@ function renderNext(){
 }
 function buildShelf(){
   const s=$('shelf');s.innerHTML='';
+  // Keep all 11 tiers in order and make the fruit illustrations visibly grow
+  // from Cherry to Watermelon without changing the game's actual physics sizes.
   fruitsData.forEach((f,i)=>{
-    const wrap=document.createElement('div');wrap.className='shelf-fruit';wrap.title=f.name;
-    const c=document.createElement('canvas');c.width=50;c.height=50;const cx=c.getContext('2d');cx.translate(25,25);
-    const scale=Math.min(12,16/(f.r/13));drawFruitShape(cx,i,scale);
+    const wrap=document.createElement('div');
+    wrap.className='shelf-fruit';
+    wrap.title=(i+1)+'. '+f.name;
+    wrap.setAttribute('aria-label',(i+1)+'. '+f.name);
+    const c=document.createElement('canvas');
+    c.width=36;c.height=40;
+    c.setAttribute('aria-hidden','true');
+    const cx=c.getContext('2d');
+    cx.translate(18,20);
+    const previewRadius=4.5+(i*0.95);
+    drawFruitShape(cx,i,previewRadius);
     wrap.appendChild(c);
-    if(f.score>=10){const sp=document.createElement('span');sp.textContent=f.score;wrap.appendChild(sp)}
+    const sp=document.createElement('span');
+    sp.textContent=String(i+1);
+    sp.setAttribute('aria-hidden','true');
+    wrap.appendChild(sp);
     s.appendChild(wrap);
   });
 }
